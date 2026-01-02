@@ -1,132 +1,260 @@
-# AI Coding Agent Framework (TypeScript)
+# Build Your Own AI Coding Agent (TypeScript)
 
-This repository demonstrates the step-by-step evolution of a modular AI coding agent framework built with TypeScript and the Anthropic SDK.
+A step-by-step workshop for building an AI-powered coding assistant using TypeScript and the Anthropic Claude API.
 
-## Project Overview
+## What You'll Learn
 
-The project is structured into chapters, each representing a distinct iteration in the agent's development—from a simple message loop to a mature, tool-capable framework.
+By the end of this workshop, you'll understand how to:
 
-### Chapters
+- Connect to the Anthropic Claude API
+- Build a simple AI chatbot with conversation history
+- Add tools like reading files and listing directories
+- Handle tool requests and errors gracefully
+- Build a modular agent framework that's easy to extend
 
-- **[Chapter 1: The Inception](./chapter1)**: Establishing the fundamental message loop and CLI interaction.
-- **[Chapter 2: Introducing Tools](./chapter2)**: Adding the first tool (`read_file`) to enable file reading capabilities.
-- **[Chapter 3: Extending Tools](./chapter3)**: Extending the tool set with `list_files` following the same pattern.
-- **[Chapter 4: The Framework](./chapter4)**: Separating Agent from Tools into a modular, extensible architecture.
+## What We're Building
 
-## Evolutionary Overview
+You'll build 4 versions of a coding assistant, each adding more capabilities:
 
-The following illustrations track the development of the framework's architecture, now fully integrated with structured logging.
+1. **Basic Chat** — talk to Claude
+2. **File Reader** — read code files
+3. **File Explorer** — list files in folders
+4. **Modular Framework** — clean, extensible architecture
 
-### Chapter 1: Simple Chat Loop
 ```mermaid
-graph TB
-    A[Start Chat] --> B[Get User Input]
-    B --> C{Empty?}
-    C -->|Yes| B
-    C -->|No| D[Add to History]
-    D --> E[Send to Claude]
-    E --> F[Get Response]
-    F --> G[Display Text]
-    G --> H[Add to History]
-    H --> B
+graph LR
+    subgraph "Application Progression"
+        A["Chapter 1<br/>Basic Chat"] --> B["Chapter 2<br/>+ File Reading"]
+        B --> C["Chapter 3<br/>+ Directory Listing"]
+        C --> D["Chapter 4<br/>Modular Framework"]
+    end
+
+    subgraph "Tool Capabilities"
+        G["No Tools"] --> H["read_file"]
+        H --> I["read_file<br/>list_files"]
+        I --> J["read_file<br/>list_files<br/>(modular)"]
+    end
+
+    A -.-> G
+    B -.-> H
+    C -.-> I
+    D -.-> J
 ```
 
-### Chapter 2: Single Tool Loop
+## How It Works (Architecture)
+
+Each agent works like this:
+
+1. Waits for your input
+2. Sends it to Claude
+3. Claude may respond directly or ask to use a tool
+4. The agent runs the tool (e.g., read a file)
+5. Sends the result back to Claude
+6. Claude gives you the final answer
+
+This is the **agentic loop** — it's what makes the assistant "smart."
+
 ```mermaid
 graph TB
-    A[Start Chat] --> B[Get User Input]
-    B --> C{Empty?}
-    C -->|Yes| B
-    C -->|No| D[Add to History]
-    D --> E[Send to Claude]
-    E --> F[Get Response]
-    F --> G{Tool Use?}
-    G -->|No| H[Display Text]
-    G -->|Yes| I[Execute Tool]
-    I --> J[Collect Result]
-    J --> K[Send Result to Claude]
-    K --> F
-    H --> L[Add to History]
-    L --> B
+    subgraph "Agent Architecture"
+        A["Agent"] --> B["Anthropic Client"]
+        A --> C["Tool Registry"]
+        A --> D["readline Interface"]
+        A --> E["Verbose Logging"]
+    end
+
+    subgraph "Event Loop"
+        F["Start Chat"] --> G["Get User Input"]
+        G --> H{"Empty?"}
+        H -->|Yes| G
+        H -->|No| I["Add to Conversation"]
+        I --> J["Send to Claude"]
+        J --> K["Get Response"]
+        K --> L{"Tool Use?"}
+        L -->|No| M["Display Text"]
+        L -->|Yes| N["Execute Tools"]
+        N --> O["Collect Results"]
+        O --> P["Send Results to Claude"]
+        P --> K
+        M --> G
+    end
 ```
-
-### Chapter 3: Multiple Tools
-```mermaid
-graph TB
-    A[Start Chat] --> B[Get User Input]
-    B --> C{Empty?}
-    C -->|Yes| B
-    C -->|No| D[Add to History]
-    D --> E[Send to Claude]
-    E --> F[Get Response]
-    F --> G{Tool Use?}
-    G -->|No| H[Display Text]
-    G -->|Yes| I{Which Tool?}
-    I -->|read_file| J[Execute ReadFile]
-    I -->|list_files| K[Execute ListFiles]
-    J --> L[Collect Result]
-    K --> L
-    L --> M[Send Result to Claude]
-    M --> F
-    H --> N[Add to History]
-    N --> B
-```
-
-### Chapter 4: The Framework
-```mermaid
-graph TB
-    A[index.ts] --> B[Register Tools]
-    B --> C[Initialize Agent]
-    C --> D[Start Chat]
-    D --> E[Get User Input]
-    E --> F{Empty?}
-    F -->|Yes| E
-    F -->|No| G[Add to History]
-    G --> H[Send to Claude]
-    H --> I[Get Response]
-    I --> J{Tool Use?}
-    J -->|No| K[Display Text]
-    J -->|Yes| L[Find Tool by Name]
-    L --> M[Execute Tool]
-    M --> N[Collect Result]
-    N --> O[Send Result to Claude]
-    O --> I
-    K --> P[Add to History]
-    P --> E
-```
-
-## Architecture & Core Patterns
-
-### Structured Logging (Pino)
-A central pillar of this framework is structured, high-performance logging. We moved away from `console.log` to **Pino**, allowing for:
-1. **Log Levels**: Discerning between `debug` traces (reasoning) and `info` results.
-2. **Machine-Readable**: Structured JSON output for downstream analysis.
-3. **Performance**: Minimal overhead even in heavy agentic loops.
-
-### Idiomatic TypeScript
-The project prioritizes standard TypeScript patterns over custom abstractions. 
-- **Error Handling**: Uses standard `try-catch` blocks for clear, predictable failure paths.
-- **Type Safety**: Leverages strict typing and interfaces to define the contract between the Agent and its Tools.
-- **Zod Schemas**: Uses Zod for both runtime validation and automatic generation of JSON schemas for the LLM.
-
-
-### Key Dependencies
-
-- **[Anthropic SDK](https://github.com/anthropics/anthropic-sdk-typescript)**: Powers the inference loop and message handling.
-- **[Commander](https://github.com/tj/commander.js)**: Provides the CLI argument parsing.
-- **[Zod](https://zod.dev)**: Used for data validation and generating JSON schemas for tools.
 
 ## Getting Started
 
-1. **Install Dependencies**:
-   ```bash
-   bun install
-   ```
-2. **Configure API Key**:
-   ```bash
-   export ANTHROPIC_API_KEY='your-key-here'
-   ```
-3. **Run Framework (Chapter 4)**:
-   ```bash
-   bun run chapter4/index.ts --verbose
-   ```
+### Prerequisites
+
+- [Bun](https://bun.sh/) runtime (or Node.js 18+)
+- An [Anthropic API Key](https://console.anthropic.com/)
+
+### Setup
+
+```bash
+# Clone and install
+bun install
+
+# Add your API key
+export ANTHROPIC_API_KEY="your-api-key-here"
+```
+
+## Workshop Path
+
+### Chapter 1: Basic Chat
+
+A simple chatbot that talks to Claude with conversation history.
+
+```bash
+bun run chapter1/index.ts
+```
+
+**Try it:**
+- "Hello!"
+- "What's 2+2?"
+- "What did I just ask you?" (tests memory)
+
+**What you'll learn:**
+- Anthropic SDK basics
+- Conversation history management
+- The message loop pattern
+
+### Chapter 2: File Reader
+
+Now Claude can read files from your computer.
+
+```bash
+bun run chapter2/read_file.ts
+```
+
+**Try it:**
+- "Read package.json"
+- "What dependencies does this project use?"
+
+**What you'll learn:**
+- Tool definition with Zod schemas
+- The tool use loop
+- Handling tool results
+
+### Chapter 3: File Explorer
+
+Adds directory listing so Claude can explore your codebase.
+
+```bash
+bun run chapter3/list_files.ts
+```
+
+**Try it:**
+- "List all files in this directory"
+- "What's in the chapter3 folder?"
+
+**What you'll learn:**
+- Adding multiple tools
+- Tool dispatch by name
+- Error handling patterns
+
+### Chapter 4: The Framework
+
+A modular architecture with separation of concerns.
+
+```bash
+bun run chapter4/index.ts
+```
+
+**Try it:**
+- "What TypeScript files are in this project?"
+- "Show me the agent.ts file"
+
+**What you'll learn:**
+- Modular code organization
+- Shared type definitions
+- Clean entry point pattern
+- How to add new tools easily
+
+## Chapter Overview
+
+| Chapter | Focus | Tools Available |
+|---------|-------|-----------------|
+| 1 | API basics, conversation history | None |
+| 2 | Tool definition, tool use loop | `read_file` |
+| 3 | Multiple tools, error handling | `read_file`, `list_files` |
+| 4 | Modular architecture, extensibility | `read_file`, `list_files` (modular) |
+
+## File Structure
+
+```
+code-agent-ts/
+├── chapter1/
+│   └── index.ts           # Basic chat agent
+├── chapter2/
+│   └── read_file.ts       # Agent + read_file tool
+├── chapter3/
+│   ├── read_file.ts       # Agent + read_file tool
+│   └── list_files.ts      # Agent + list_files tool
+├── chapter4/
+│   ├── index.ts           # Entry point
+│   ├── agent.ts           # Core Agent class
+│   ├── types.ts           # Shared interfaces
+│   └── tools/
+│       ├── read_file.ts   # File reading tool
+│       └── list_files.ts  # Directory listing tool
+├── logger.ts              # Pino structured logging
+├── console.ts             # Terminal output utilities
+└── README.md
+```
+
+## Key Technologies
+
+| Technology | Purpose |
+|------------|---------|
+| [Anthropic SDK](https://github.com/anthropics/anthropic-sdk-typescript) | Claude API integration |
+| [Zod](https://zod.dev) | Schema validation & JSON Schema generation |
+| [Commander](https://github.com/tj/commander.js) | CLI argument parsing |
+| [Pino](https://github.com/pinojs/pino) | Structured logging |
+| [picocolors](https://github.com/alexeyraspopov/picocolors) | Terminal colors |
+| [boxen](https://github.com/sindresorhus/boxen) | Terminal boxes |
+
+## Verbose Mode
+
+All chapters support `--verbose` for debug logging:
+
+```bash
+bun run chapter4/index.ts --verbose
+```
+
+This shows:
+- When messages are sent to Claude
+- Tool executions and results
+- Conversation history length
+- API call timing
+
+## Adding Your Own Tools
+
+Once you complete Chapter 4, adding new tools is simple:
+
+1. **Create the file**: `chapter4/tools/my_tool.ts`
+2. **Define the schema and executor**
+3. **Register in `index.ts`**
+
+See [Chapter 4 README](./chapter4/README.md) for detailed instructions.
+
+## Troubleshooting
+
+**API key not working?**
+- Make sure it's exported: `echo $ANTHROPIC_API_KEY`
+- Check your quota on [Anthropic's console](https://console.anthropic.com/)
+
+**Bun errors?**
+- Update Bun: `bun upgrade`
+- Or use Node.js: `npx tsx chapter4/index.ts`
+
+**Tool errors?**
+- Use `--verbose` for detailed logs
+- Check file paths and permissions
+
+## What's Next?
+
+After completing the workshop, try extending with:
+- **Bash tool**: Run shell commands
+- **Edit tool**: Modify files
+- **Code search**: Pattern matching with ripgrep
+- **System prompts**: Give Claude context about the project
+- **Streaming**: Display responses as they arrive

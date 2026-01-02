@@ -3,8 +3,8 @@ import { Command } from "commander";
 import * as readline from "readline/promises";
 import { readFile } from "fs/promises";
 import { z } from 'zod';
-import { logger } from "../../logger";
-import { console_out } from "../../console";
+import { logger } from "../logger";
+import { console_out } from "../console";
 
 const program = new Command();
 

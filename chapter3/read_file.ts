@@ -1,10 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Command } from "commander";
 import * as readline from "readline/promises";
-import { readdir } from "fs/promises";
+import { readFile } from "fs/promises";
 import { z } from 'zod';
-import { logger } from "../../logger";
-import { console_out } from "../../console";
+import { logger } from "../logger";
+import { console_out } from "../console";
 
 const program = new Command();
 
@@ -30,38 +30,33 @@ program
             output: process.stdout,
         });
 
-        const tools = [ListFilesToolDefinition];
+        const tools = [ReadFileToolDefinition];
         const agent = new Agent(client, rl, verbose, tools);
         await agent.run();
 
         rl.close();
     });
 
-const ListFilesInputSchema = z.object({
-    path: z.string().describe("Path to the directory to list"),
+const ReadFileInputSchema = z.object({
+    path: z.string().describe("Path to the file to read"),
 });
 
-const ListFiles = async (args: z.infer<typeof ListFilesInputSchema>): Promise<string> => {
-    try {
-        const files = await readdir(args.path);
-        return files.join("\n");
-    } catch (err: any) {
-        return `Error listing files: ${err.message}`;
-    }
+const ReadFile = async (args: z.infer<typeof ReadFileInputSchema>): Promise<string> => {
+    return await readFile(args.path, "utf-8");
 }
 
-const ListFilesToolDefinition: ToolDefinition = {
+const ReadFileToolDefinition: ToolDefinition = {
     Param: {
-        name: "list_files",
-        description: "List files in a directory",
-        input_schema: GenerateSchema(ListFilesInputSchema),
+        name: "read_file",
+        description: "Read the contents of a given relative file path. Use this when you want to see what's inside a file. Do not use this with directory names.",
+        input_schema: GenerateSchema(ReadFileInputSchema)
     },
-    Execute: ListFiles,
+    Execute: ReadFile
 }
 
 interface ToolDefinition {
-    Param: Anthropic.Tool;
-    Execute: (args: any) => Promise<string>;
+    Param: Anthropic.Tool
+    Execute: (args: any) => Promise<string>
 }
 
 class Agent {
@@ -230,7 +225,7 @@ class Agent {
     }
 }
 
-function GenerateSchema<T extends z.ZodType>(v: T): Anthropic.Tool['input_schema'] {
+function GenerateSchema(v: z.ZodType): Anthropic.Tool['input_schema'] {
     const schema = (v as any).toJSONSchema()
     return {
         type: "object",
