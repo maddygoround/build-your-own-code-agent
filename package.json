@@ -1,0 +1,25 @@
+{
+  "name": "code-agent-ts",
+  "main": "dist/index.js",
+  "bin": {
+    "code-agent-ts": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "bun run src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^25.0.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "commander": "^14.0.2",
+    "@anthropic-ai/sdk" : "^0.71.2",
+    "zod" : "^4.3.4",
+    "neverthrow" : "^8.2.0"
+  }
+}
