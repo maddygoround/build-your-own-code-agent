@@ -38,22 +38,17 @@ To add a new tool to this framework:
 graph TD
     User([User]) -- "Prompt" --> Runner[index.ts]
     Runner -- "Register" --> Tools[Tool Set]
-    Runner -- "Initialize" --> Agent[Agent Instance]
-    Agent -- "Request (Tools + History)" --> API[Anthropic API]
-    API -- "Message/Tool Use" --> Agent
-    Agent -- "Dispatch" --> Tools
-    Tools -- "Execute" --> FS[File System]
+    Runner -- "Init" --> Agent[Agent]
+    Agent -- "Loop" --> API[Anthropic API]
+    API -- "Tool call" --> Agent
+    Agent -- "Execute" --> Tools
     Tools -- "Result" --> Agent
-    Agent -- "Tool Result" --> API
-    Agent -- "History.push" --> History[(Message History)]
-    Agent -- "Response" --> User
+    Agent -- "Final Answer" --> User
 
     subgraph Logging Layer
-        Runner -- "Init Log" --> Logger["Shared Logger (Pino)"]
-        Agent -- "Trace Dispatch" --> Logger
-        Tools -- "Trace Execution" --> Logger
+        Agent -- "Trace" --> Logger["Pino Logger"]
+        Tools -- "Log" --> Logger
     end
-
 ```
 
 

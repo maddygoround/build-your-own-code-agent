@@ -30,27 +30,18 @@ Both tools use the shared `logger.ts` for consistent logging across the framewor
 ### Flow Diagram
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Script[Tool Script]
-    Script -- "Define Schema" --> Zod[Zod Schema]
-    Zod -- "Generate" --> API_Schema[JSON Schema]
-    Script -- "Initialize" --> Agent[Agent Instance]
-    Agent -- "Request (Schema + History)" --> API[Anthropic API]
-    API -- "Message/Tool Use" --> Agent
-    Agent -- "Dispatch" --> Tools{Tool Selection}
-    Tools -- "read_file" --> ReadFile[ReadFile Tool]
-    Tools -- "list_files" --> ListFiles[ListFiles Tool]
-    ReadFile -- "Execute" --> FS[File System]
-    ListFiles -- "Execute" --> FS
-    ReadFile -- "Result" --> Agent
-    ListFiles -- "Result" --> Agent
+    User([User]) -- "Prompt" --> Agent[Agent Instance]
+    Agent -- "Request" --> API[Anthropic API]
+    API -- "Tool Use" --> Agent
+    Agent -- "Dispatch" --> Tools{Tools}
+    Tools -- "read_file" --> Tool1[ReadFile]
+    Tools -- "list_files" --> Tool2[ListFiles]
+    Tool1 -- "Result" --> Agent
+    Tool2 -- "Result" --> Agent
     Agent -- "Tool Result" --> API
-    Agent -- "History.push" --> History[(Message History)]
-    Agent -- "Response" --> User
+    Agent -- "Final Answer" --> User
 
-    subgraph Logging Layer
-        Agent -- "debug: Tool Dispatch" --> Logger["Shared Logger (Pino)"]
-    end
-
+    Agent -- "Log" --> Logger["Pino Logger"]
 ```
 
 

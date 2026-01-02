@@ -17,61 +17,46 @@ The project is structured into chapters, each representing a distinct iteration 
 
 The following illustrations track the development of the framework's architecture, now fully integrated with structured logging.
 
-### Chapter 1: The Inception
+### Chapter 1: The Monolithic Loop
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Agent[Monolithic Agent]
+    User([User]) -- "Prompt" --> Agent[Agent Script]
     Agent -- "Request" --> API[Anthropic API]
-    API -- "Message" --> Agent
-    Agent -- "Response" --> User
+    API -- "Response" --> Agent
+    Agent -- "Output" --> User
     
-    subgraph Logging Layer
-        Agent -- "Trace Event" --> Logger["Shared Logger (Pino)"]
-    end
+    Agent -- "Log" --> Logger["Pino Logger"]
 ```
 
-### Chapter 2: Introducing Tools
+### Chapter 2: The Tool Loop
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Script[read_file.ts]
-    Script -- "Define Schema" --> Zod[Zod Schema]
-    Zod -- "Generate" --> API_Schema[JSON Schema]
-    Script -- "Initialize" --> Agent[Agent Instance]
-    Agent -- "Request (Schema + History)" --> API[Anthropic API]
-    API -- "Message/Tool Use" --> Agent
-    Agent -- "Dispatch Tool" --> Tool[ReadFile Tool]
-    Tool -- "Execute" --> FS[File System]
+    User([User]) -- "Prompt" --> Agent[Agent Instance]
+    Agent -- "Request" --> API[Anthropic API]
+    API -- "Tool Use" --> Agent
+    Agent -- "Execute" --> Tool[Single Tool]
     Tool -- "Result" --> Agent
     Agent -- "Tool Result" --> API
-    Agent -- "Response" --> User
+    Agent -- "Final Answer" --> User
 
-    subgraph Logging Layer
-        Agent -- "debug: Tool Dispatch" --> Logger["Shared Logger (Pino)"]
-    end
+    Agent -- "Log" --> Logger["Pino Logger"]
 ```
 
-### Chapter 3: Extending Tools
+### Chapter 3: Multiple Tools
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Script[Tool Script]
-    Script -- "Define Schema" --> Zod[Zod Schema]
-    Zod -- "Generate" --> API_Schema[JSON Schema]
-    Script -- "Initialize" --> Agent[Agent Instance]
-    Agent -- "Request (Schema + History)" --> API[Anthropic API]
-    API -- "Message/Tool Use" --> Agent
-    Agent -- "Dispatch" --> Tools{Tool Selection}
-    Tools -- "read_file" --> ReadFile[ReadFile Tool]
-    Tools -- "list_files" --> ListFiles[ListFiles Tool]
-    ReadFile -- "Execute" --> FS[File System]
-    ListFiles -- "Execute" --> FS
-    ReadFile -- "Result" --> Agent
-    ListFiles -- "Result" --> Agent
+    User([User]) -- "Prompt" --> Agent[Agent Instance]
+    Agent -- "Request" --> API[Anthropic API]
+    API -- "Tool Use" --> Agent
+    Agent -- "Dispatch" --> Tools{Tools}
+    Tools -- "read_file" --> Tool1[ReadFile]
+    Tools -- "list_files" --> Tool2[ListFiles]
+    Tool1 -- "Result" --> Agent
+    Tool2 -- "Result" --> Agent
     Agent -- "Tool Result" --> API
-    Agent -- "Response" --> User
+    Agent -- "Final Answer" --> User
 
-    subgraph Logging Layer
-        Agent -- "debug: Tool Dispatch" --> Logger["Shared Logger (Pino)"]
-    end
+    Agent -- "Log" --> Logger["Pino Logger"]
 ```
 
 ### Chapter 4: The Framework
@@ -79,18 +64,16 @@ graph TD
 graph TD
     User([User]) -- "Prompt" --> Runner[index.ts]
     Runner -- "Register" --> Tools[Tool Set]
-    Runner -- "Initialize" --> Agent[Agent Instance]
-    Agent -- "Request (Tools + History)" --> API[Anthropic API]
-    API -- "Message/Tool Use" --> Agent
-    Agent -- "Dispatch" --> Tools
-    Tools -- "Execute" --> FS[File System]
+    Runner -- "Init" --> Agent[Agent]
+    Agent -- "Loop" --> API[Anthropic API]
+    API -- "Tool call" --> Agent
+    Agent -- "Execute" --> Tools
     Tools -- "Result" --> Agent
-    Agent -- "Tool Result" --> API
-    Agent -- "Response" --> User
+    Agent -- "Final Answer" --> User
 
     subgraph Logging Layer
-        Agent -- "Trace Dispatch" --> Logger["Shared Logger (Pino)"]
-        Tools -- "Trace Result" --> Logger
+        Agent -- "Trace" --> Logger["Pino Logger"]
+        Tools -- "Log" --> Logger
     end
 ```
 

@@ -1,6 +1,6 @@
 # Chapter 1: The Inception
 
-This chapter marks the beginning of the journey, where we establish the fundamental communication loop between a human user and an AI model.
+This chapter marks the journey's beginning, where we establish the fundamental communication loop between a human user and an AI model.
 
 ## The Goal
 The objective was to create a basic CLI application that could maintain a stateful conversation with Claude. This required setting up a persistent history and a recurring interaction loop.
@@ -31,17 +31,12 @@ We use a shared `logger.ts` utility based on `pino`. This allows us to separate 
 ### Flow Diagram
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Agent[Monolithic Agent]
+    User([User]) -- "Prompt" --> Agent[Agent Script]
     Agent -- "Request" --> API[Anthropic API]
-    API -- "Message" --> Agent
-    Agent -- "Response" --> User
-    Agent -- "History.push" --> History["(Message History)"]
-    History -- "Context" --> Agent
+    API -- "Response" --> Agent
+    Agent -- "Output" --> User
     
-    subgraph Logging Layer
-        Agent -- "Log Event" --> Logger["Shared Logger (Pino)"]
-    end
-
+    Agent -- "Log" --> Logger["Pino Logger"]
 ```
 
 ## How to Run

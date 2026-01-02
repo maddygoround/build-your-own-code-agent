@@ -30,25 +30,15 @@ When the API returns a `tool_use` block:
 ### Flow Diagram
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Script[read_file.ts]
-    Script -- "Define Schema" --> Zod[Zod Schema]
-    Zod -- "Generate" --> API_Schema[JSON Schema]
-    Script -- "Initialize" --> Agent[Agent Instance]
-    Agent -- "Request (Schema + History)" --> API[Anthropic API]
-    API -- "Message/Tool Use" --> Agent
-    Agent -- "Dispatch Tool" --> Tool[ReadFile Tool]
-    Tool -- "Execute" --> FS[File System]
+    User([User]) -- "Prompt" --> Agent[Agent Instance]
+    Agent -- "Request" --> API[Anthropic API]
+    API -- "Tool Use" --> Agent
+    Agent -- "Execute" --> Tool[Single Tool]
     Tool -- "Result" --> Agent
     Agent -- "Tool Result" --> API
-    Agent -- "History.push" --> History[(Message History)]
-    Agent -- "Response" --> User
+    Agent -- "Final Answer" --> User
 
-    subgraph Logging Layer
-        Script -- "debug: Init" --> Logger["Shared Logger (Pino)"]
-        Agent -- "debug: Tool Dispatch" --> Logger
-        Tool -- "info: File Read" --> Logger
-    end
-
+    Agent -- "Log" --> Logger["Pino Logger"]
 ```
 
 ## How to Run
