@@ -1,21 +1,23 @@
 import Anthropic from "@anthropic-ai/sdk";
+import * as readline from "readline/promises";
 import { ToolDefinition } from "./types";
 import { logger } from "../logger";
+import { console_out } from "../console";
 
 export class Agent {
     private client: Anthropic;
-    private getUserMessage: () => Promise<string>;
+    private rl: readline.Interface;
     private verbose: boolean;
     private tools: ToolDefinition[];
 
     constructor(
         client: Anthropic,
-        getUserMessage: () => Promise<string>,
+        rl: readline.Interface,
         tools: ToolDefinition[],
         verbose?: boolean
     ) {
         this.client = client;
-        this.getUserMessage = getUserMessage;
+        this.rl = rl;
         this.tools = tools;
         this.verbose = !!verbose;
     }
@@ -27,14 +29,13 @@ export class Agent {
             logger.debug("Conversation started");
         }
 
-        logger.info("Chat with Claude (use 'ctrl-c' to quit)");
+        console_out.banner("Chat with Claude (use 'ctrl-c' to quit)");
 
         while (true) {
-            process.stdout.write("\x1b[94mYou\x1b[0m: ");
             let userInput: string;
             try {
-                userInput = await this.getUserMessage();
-            } catch (err) {
+                userInput = await this.rl.question("\x1b[94mYou\x1b[0m: ");
+            } catch {
                 if (this.verbose) {
                     logger.debug("User input ended, breaking from chat loop");
                 }
@@ -72,7 +73,7 @@ export class Agent {
 
                     for (const block of message.content) {
                         if (block.type === "text") {
-                            logger.info(`\x1b[92mClaude\x1b[0m: ${block.text}`);
+                            console_out.claude(block.text);
                         } else if (block.type === "tool_use") {
                             hasToolUse = true;
                             const toolToUse = block.name;
@@ -115,6 +116,7 @@ export class Agent {
                     }
 
                     if (!hasToolUse) {
+                        console_out.finishClaudeTurn();
                         break;
                     }
 
@@ -130,7 +132,7 @@ export class Agent {
                 if (this.verbose) {
                     logger.debug({ err }, "Error during inference");
                 }
-                logger.error(err);
+                console_out.error(err instanceof Error ? err.message : String(err));
                 return;
             }
         }

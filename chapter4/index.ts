@@ -5,6 +5,7 @@ import { Agent } from "./agent";
 import { ListFilesToolDefinition } from "./tools/list_files";
 import { ReadFileToolDefinition } from "./tools/read_file";
 import { logger } from "../logger";
+import { console_out } from "../console";
 
 async function main() {
     const program = new Command();
@@ -26,28 +27,20 @@ async function main() {
         output: process.stdout,
     });
 
-    const getUserMessage = async (): Promise<string> => {
-        const input = await rl.question("");
-        if (input.toLowerCase() === "exit" || input.toLowerCase() === "quit") {
-            throw new Error("EOF");
-        }
-        return input;
-    };
-
     const tools = [ListFilesToolDefinition, ReadFileToolDefinition];
 
-    const agent = new Agent(client, getUserMessage, tools, verbose);
+    const agent = new Agent(client, rl, tools, verbose);
 
     try {
         await agent.run();
     } catch (err) {
-        logger.error(err);
+        console_out.error(err instanceof Error ? err.message : String(err));
     } finally {
         rl.close();
     }
 }
 
 main().catch((err) => {
-    logger.error(err);
+    console_out.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
 });
