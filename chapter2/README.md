@@ -1,50 +1,45 @@
-# Chapter 2: Empowerment through Tools
+# Chapter 2: The Agent Primitive
 
-This chapter expands the agent's capabilities by moving from a simple chat interface to an "active" tool-using agent.
+This chapter introduces the concept of an `Agent` as a structured class, paving the way for more complex behaviors and tool integration.
 
 ## The Goal
-A chat agent is limited by its training data. To be useful in a development context, it needs the ability to observe the environment. The focus here was to implement **Tool Integration**, specifically allowing the agent to read files from the local filesystem.
+In Chapter 1, the logic was monolithic. To scale, we need to encapsulate the conversation loop and model interaction into a reusable **Primitive**. The focus here is on **Encapsulation** and starting the transition toward a tool-aware architecture.
 
-## Evolution of the Loop
-In this iteration, the agent's architecture begins to shift. We introduce a mechanism for the model to signal that it wants to perform an action.
+## Architecture
+We introduce the `Agent` class, which takes ownership of the interaction loop.
 
-- **[index.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter2/index.ts)**: The primary entry point. While similar to Chapter 1, it lays the groundwork for tool-aware prompting.
-- **[tools/read.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter2/tools/read.ts)**: A self-contained execution script that demonstrates a specific tool implementation for reading files.
+- **[index.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter2/index.ts)**: Implementation of the `Agent` class and the CLI runner.
 
-### Tool Definition & Schemas
-We use **Zod** to define the expected input for each tool. This allows us to:
-1. Validate the model's output before execution.
-2. Automatically generate the JSON Schema that Claude needs to understand how to use the tool.
+### Encapsulation
+The logic is now divided into:
+1. **Runner**: Handles CLI flags, environment setup, and input/output streams.
+2. **Agent**: Manages the persistent conversation state and the iterative reasoning loop.
 
-### Error Handling & Logging
-This chapter adopts **idiomatic TypeScript error handling** using standard `try-catch` blocks. The agent is now resilient to filesystem errors (permissions, missing paths), which are reported back to the model as gracefully handled tool errors. 
+### Logging Pattern
+We continue to use the shared `logger.ts`. By moving the loop into a class, we can easily pass configuration (like the `verbose` flag) to the agent, allowing it to log its internal state transitions clearly.
 
-Logging is centralized via the shared `logger.ts` (using `pino`), enabling cleaner separation between debug traces and user output.
-
-### The read_file Capability
-The first tool implemented was `read_file`. This involved:
-- **Node.js `fs/promises` interaction**: Asynchronously reading file contents.
-- **Tool Mapping**: A registry matching model requests to TypeScript functions.
-- **Result Feedback**: Feeding file content or handled errors back into the conversation history.
-
-## Lessons Learned
-Clear error reporting and structured logging are vital. Centralized logging helps track the multi-turn tool execution flow without cluttering the main console output.
+## Why Encapsulate?
+- **Maintainability**: The runner doesn't need to know *how* the agent thinks.
+- **State Management**: The `Agent` class naturally holds the `conversation` history.
+- **Foundation for Tools**: By having a dedicated loop, we can later insert logic to intercept model requests and dispatch them to external functions.
 
 ### Flow Diagram
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Agent[Agent Loop]
-    Agent -- "Log" --> Logger[Shared Logger]
+    User([User]) -- "Prompt" --> Runner[index.ts Runner]
+    Runner -- "Instantiate" --> Agent[Agent Instance]
     Agent -- "Request" --> API[Anthropic API]
     API -- "Message" --> Agent
-    Agent -- "isToolUse?" --> ToolDecision{Tool Use?}
-    ToolDecision -- "try/catch" --> ToolExec[Tool Execution: read_file]
-    ToolExec -- "Result/Error" --> Agent
-    Agent -- "Request (with Result)" --> API
-    ToolDecision -- "No" --> User
+    Agent -- "History.push" --> History[(Message History)]
+    Agent -- "Response" --> User
+    
+    subgraph Logging Layer
+        Runner -- "Init Log" --> Logger[Shared Logger (Pino)]
+        Agent -- "Trace State" --> Logger
+    end
 ```
 
 ## How to Run
 ```bash
-bun run chapter2/tools/read.ts --verbose
+bun run chapter2/index.ts --verbose
 ```

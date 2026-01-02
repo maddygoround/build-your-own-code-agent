@@ -8,14 +8,14 @@ The project is structured into chapters, each representing a distinct iteration 
 
 ### Chapters
 
-- **[Chapter 1: The Inception](./chapter1)**: Building the basic message loop and CLI interface.
-- **[Chapter 2: Empowerment](./chapter2)**: Introducing tool integration with the `read_file` capability.
-- **[Chapter 3: Refinement](./chapter3)**: Refactoring into an abstracted Agent class and adding the recursive `list_files` tool.
-- **[Chapter 4: The Framework](./chapter4)**: A mature, modular architecture with standardized patterns and extensibility.
+- **[Chapter 1: The Inception](./chapter1)**: Establishing the fundamental message loop and CLI interaction.
+- **[Chapter 2: The Agent Primitive](./chapter2)**: Encapsulating the loop and state into a reusable `Agent` class.
+- **[Chapter 3: Task-Specific Agents](./chapter3)**: Designing specialized scripts for focused capabilities like file exploration.
+- **[Chapter 4: The Framework](./chapter4)**: A mature, tool-agnostic architecture with standardized patterns and extensibility.
 
 ## Evolutionary Overview
 
-The following diagrams illustrate the incremental evolution of the agent framework's architecture.
+The following illustrations track the development of the framework's architecture, now fully integrated with structured logging.
 
 ### Chapter 1: The Inception
 ```mermaid
@@ -24,68 +24,70 @@ graph TD
     Agent -- "Request" --> API[Anthropic API]
     API -- "Message" --> Agent
     Agent -- "Response" --> User
-    Agent -- "History.push" --> History[(Message History)]
-    History -- "Context" --> Agent
+    
+    subgraph Logging Layer
+        Agent -- "Trace Event" --> Logger[Shared Logger (Pino)]
+    end
 ```
 
-### Chapter 2: Empowerment
+### Chapter 2: The Agent Primitive
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Agent[Agent Loop]
-    Agent -- "Request" --> API[Anthropic API]
+    User([User]) -- "Prompt" --> Runner[index.ts]
+    Runner -- "Instantiate" --> Agent[Agent Instance]
+    Agent -- "Inference" --> API[Anthropic API]
     API -- "Message" --> Agent
-    Agent -- "isToolUse?" --> ToolDecision{Tool Use?}
-    ToolDecision -- "Yes" --> ToolExec[Tool Execution: read_file]
-    ToolExec -- "Result" --> Agent
-    Agent -- "Request (with Result)" --> API
-    ToolDecision -- "No" --> User
+    Agent -- "Response" --> User
+    
+    subgraph Logging Layer
+        Runner -- "Init Log" --> Logger[Shared Logger (Pino)]
+        Agent -- "Trace State" --> Logger
+    end
 ```
 
-### Chapter 3: Refinement
+### Chapter 3: Task-Specific Agents
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Runner[index.ts Runner]
-    Runner -- "Init" --> AgentClass[Agent class]
-    Runner -- "Register" --> Tools[Tool Modules: read_file, list_files]
-    AgentClass -- "Loop" --> AgentClass
-    AgentClass -- "Request" --> API[Anthropic API]
-    AgentClass -- "Dispatch" --> Tools
-    Tools -- "Result" --> AgentClass
-    AgentClass -- "Display" --> User
+    User([User]) -- "Invoke" --> Script[list_files.ts]
+    Script -- "Zod Schema" --> API[Anthropic API]
+    API -- "Tool Use" --> Script
+    Script -- "Execute" --> FS[File System]
+    
+    subgraph Logging Layer
+        Script -- "debug: Internal State" --> Logger[Shared Logger (Pino)]
+    end
 ```
 
 ### Chapter 4: The Framework
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Main[index.ts]
-    Main -- "New Result<Agent>" --> Agent[Agent Instance]
-    Agent -- "Reason" --> API[Anthropic API]
-    API -- "Tool Use" --> Dispatcher[Agent Dispatcher]
-    Dispatcher -- "wrapErr(Exec)" --> Tool[Tool Implementation]
-    Tool -- "[Error, Result]" --> Dispatcher
-    Dispatcher -- "Feed Result back" --> API
-    API -- "Text Response" --> User
-    subgraph Core Utilities
-        wrapErr
-        ResultType[Result Type]
+    User([User]) -- "Prompt" --> Runner[index.ts]
+    Runner -- "Register" --> Tools[Tool Set]
+    Runner -- "Initialize" --> Agent[Agent Instance]
+    Agent -- "Dispatch" --> Tools
+    Tools -- "Action" --> FS[File System]
+    Agent -- "Response" --> User
+    
+    subgraph Logging Layer
+        Agent -- "Trace Dispatch" --> Logger[Shared Logger (Pino)]
+        Tools -- "Trace Result" --> Logger
     end
 ```
 
 ## Architecture & Core Patterns
 
-### Go-Style Error Handling
-A central theme in this project (specifically from Chapter 4 onwards) is the adoption of a **Go-style error handling pattern**. This approach avoids the cognitive overhead and "pyramid of doom" often associated with `try-catch` blocks.
+### Structured Logging (Pino)
+A central pillar of this framework is structured, high-performance logging. We moved away from `console.log` to **Pino**, allowing for:
+1. **Log Levels**: Discerning between `debug` traces (reasoning) and `info` results.
+2. **Machine-Readable**: Structured JSON output for downstream analysis.
+3. **Performance**: Minimal overhead even in heavy agentic loops.
 
-The `wrapErr` utility ensures that asynchronous operations return a standardized tuple:
+### Idiomatic TypeScript
+The project prioritizes standard TypeScript patterns over custom abstractions. 
+- **Error Handling**: Uses standard `try-catch` blocks for clear, predictable failure paths.
+- **Type Safety**: Leverages strict typing and interfaces to define the contract between the Agent and its Tools.
+- **Zod Schemas**: Uses Zod for both runtime validation and automatic generation of JSON schemas for the LLM.
 
-```typescript
-type Result<T> = Promise<[Error, undefined] | [undefined, T]>;
-```
-
-**Why this pattern?**
-1. **Explicit Handling**: Errors must be explicitly handled or ignored, making the code's failure paths visible.
-2. **Type Safety**: Using discriminated unions ensures you cannot access the result if an error exists.
-3. **Simplicity**: Keeps the happy path linear and easy to read.
 
 ### Key Dependencies
 
@@ -97,13 +99,13 @@ type Result<T> = Promise<[Error, undefined] | [undefined, T]>;
 
 1. **Install Dependencies**:
    ```bash
-   npm install
+   bun install
    ```
 2. **Configure API Key**:
    ```bash
    export ANTHROPIC_API_KEY='your-key-here'
    ```
-3. **Run Implementation**:
+3. **Run Framework (Chapter 4)**:
    ```bash
    bun run chapter4/index.ts --verbose
    ```

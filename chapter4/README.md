@@ -6,24 +6,25 @@ This chapter represents the final, stable architecture of the project. It moves 
 The final objective was to establish a pattern where adding new capabilities is as simple as defining a new tool file and registering it. 
 
 ## Mature Architecture
-The project is now divided into clear layers:
+The project is now divided into clear, decoupled layers:
 
 ### 1. The Core Agent
-The `Agent` class is now completely tool-agnostic. It handles conversation state, inference, and tool dispatching.
+The `Agent` class is now completely tool-agnostic. It handles conversation state, inference, and tool dispatching through a standardized interface.
 
 - **[agent.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/agent.ts)**: A fully abstracted, tool-agnostic agent class.
-- **[types.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/types.ts)**: Shared interfaces for tool definitions.
+- **[types.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/types.ts)**: Shared interfaces for tool definitions and communication.
 - **[index.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/index.ts)**: The clean entry point that wires the agent, tools, and shared logger together.
-- **[tools/](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/tools/)**: Normalized tool implementations (`read_file.ts` and `list_files.ts`).
 
-### 2. Standardization (`types.ts`)
-Shared interfaces ensure that all tools and the agent speak the same language. This eliminates runtime errors caused by mismatched tool signatures.
+### 2. Standardized Tools (`tools/`)
+Tools are implemented as independent modules that satisfy the `ToolDefinition` interface. This allows for easy registration and discovery.
 
-### 3. Integrated Logging (`logger.ts`)
-The framework now utilizes a shared logging utility powered by `pino` and `pino-pretty`. This provides structured, high-performance logging with:
-- **Level-based Filtering**: Controlled by the `LOG_LEVEL` environment variable or the `--verbose` CLI flag.
-- **Pretty-printing**: Human-readable, colored output in development.
-- **Structured Data**: Ability to log objects alongside messages for better debugging.
+- **[tools/read_file.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/tools/read_file.ts)**: Optimized file reading.
+- **[tools/list_files.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/chapter4/tools/list_files.ts)**: Professional directory listing.
+
+### 3. Integrated Utilities
+The framework utilizes shared utilities to ensure consistency across all components:
+- **[logger.ts](file:///Users/m.rathod/Documents/Projects/code-agent-ts/logger.ts)**: Structured logging powered by `pino`.
+- **Standard TypeScript Patterns**: Error handling and data flow move away from custom wrappers to idiomatic `try-catch` and standard types.
 
 ## Extending the Framework
 To add a new tool to this framework:
@@ -35,20 +36,23 @@ To add a new tool to this framework:
 ### Flow Diagram
 ```mermaid
 graph TD
-    User([User]) -- "Prompt" --> Main[index.ts]
-    Main -- "Init" --> Agent[Agent Instance]
-    Agent -- "Reason" --> API[Anthropic API]
-    API -- "Tool Use" --> Dispatcher[Agent Dispatcher]
-    Dispatcher -- "await Exec()" --> Tool[Tool Implementation]
-    Tool -- "Result string" --> Dispatcher
-    Dispatcher -- "Feed result back" --> API
-    API -- "Text Response" --> User
-    subgraph Shared Utilities
-        Logger[logger.ts]
+    User([User]) -- "Prompt" --> Runner[index.ts]
+    Runner -- "Register" --> Tools[Tool Set]
+    Runner -- "Initialize" --> Agent[Agent Instance]
+    Agent -- "Request (Tools + History)" --> API[Anthropic API]
+    API -- "Message/Tool Call" --> Agent
+    Agent -- "Dispatch" --> Tools
+    Tools -- "Result" --> Agent
+    Agent -- "History.push" --> History[(Message History)]
+    Agent -- "Response" --> User
+    
+    subgraph Logging Layer
+        Runner -- "Init Log" --> Logger[Shared Logger (Pino)]
+        Agent -- "Trace Dispatch" --> Logger
+        Tools -- "Trace Execution" --> Logger
     end
-    Agent -- "Log Event" --> Logger
-    Tool -- "Log Result" --> Logger
 ```
+
 
 ## How to Run
 ```bash

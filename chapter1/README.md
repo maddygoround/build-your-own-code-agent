@@ -11,7 +11,7 @@ At this stage, we deliberately chose a set of low-level but powerful libraries t
 - **Commander**: Used to provide a professional CLI experience with flag support (e.g., `--verbose`).
 - **Readline**: Facilitated the interactive loop, allowing the agent to capture user prompts sequentially.
 - **Anthropic SDK**: The heart of the implementation, managing the API calls to `claude-3-5-haiku-latest`.
-- **Pino**: High-performance logging library for structured output.
+- **Pino**: High-performance logging library for structured and colored output.
 
 ## Architecture
 The agent in this chapter is **monolithic**. Everything from input handling to API management resides within a single file. 
@@ -37,7 +37,10 @@ graph TD
     Agent -- "Response" --> User
     Agent -- "History.push" --> History[(Message History)]
     History -- "Context" --> Agent
-    Agent -- "Log" --> Logger[Shared Logger]
+    
+    subgraph Logging Layer
+        Agent -- "Log Event" --> Logger[Shared Logger (Pino)]
+    end
 ```
 
 ## How to Run
