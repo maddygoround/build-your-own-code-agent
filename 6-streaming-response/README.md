@@ -137,25 +137,8 @@ bun run 6-streaming-response/index.ts --verbose
 
 ## Example Session
 
-```
-You › What files are in this project?
+![Example Session](demo.gif)
 
-Claude › I'll list the files for you.
-⚡ Calling list_files
-✓ Finished list_files
-
-Here are the files in this project:
-- index.ts
-- agent.ts
-- types.ts
-...
-```
-
-Notice how:
-1. Text streams as Claude types ("I'll list the files...")
-2. Tool call appears immediately when Claude decides to use it
-3. Success indicator shows when the tool completes
-4. Final response streams after tool result is processed
 
 ## What's Next?
 
