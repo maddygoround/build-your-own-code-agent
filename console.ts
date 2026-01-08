@@ -47,6 +47,36 @@ export const console_out = {
     },
 
     /**
+     * Print Claude's streaming text delta. Shows "Claude:" prefix once per turn.
+     * Does not add newlines - text is printed as it streams.
+     */
+    claudeStream(delta: string): void {
+        if (!claudeTurnStarted) {
+            process.stdout.write(`\n${pc.green(pc.bold("Claude"))} ${pc.dim("›")} `);
+            claudeTurnStarted = true;
+        }
+        process.stdout.write(delta);
+    },
+
+    /**
+     * Print tool call start indicator
+     */
+    toolStart(toolName: string): void {
+        console.log(`\n${pc.yellow("⚡")} ${pc.dim("Calling")} ${pc.yellow(pc.bold(toolName))}`);
+    },
+
+    /**
+     * Print tool execution result indicator
+     */
+    toolEnd(toolName: string, success: boolean): void {
+        if (success) {
+            console.log(`${pc.green("✓")} ${pc.dim("Finished")} ${pc.green(toolName)}`);
+        } else {
+            console.log(`${pc.red("✗")} ${pc.dim("Failed")} ${pc.red(toolName)}`);
+        }
+    },
+
+    /**
      * Mark the end of Claude's turn (resets prefix tracking).
      * Call this after user input loop resumes.
      */

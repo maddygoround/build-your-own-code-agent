@@ -14,13 +14,14 @@ By the end of this workshop, you'll understand how to:
 
 ## What We're Building
 
-You'll build 4 versions of a coding assistant, each adding more capabilities:
+You'll build 6 versions of a coding assistant, each adding more capabilities:
 
 1. **Basic Chat** — talk to Claude
 2. **File Reader** — read code files
 3. **File Explorer** — list files in folders
 4. **Modular Framework** — clean, extensible architecture
 5. **Refined Toolkit** — powerful tools like bash, edit, and grep
+6. **Streaming Responses** — real-time text and tool visibility
 
 ```mermaid
 graph LR
@@ -29,6 +30,7 @@ graph LR
         B --> C["Chapter 3<br/>+ Directory Listing"]
         C --> D["Chapter 4<br/>Modular Framework"]
         D --> E["Chapter 5<br/>Refined Toolkit"]
+        E --> F["Chapter 6<br/>Streaming"]
     end
 
     subgraph "Tool Capabilities"
@@ -36,6 +38,7 @@ graph LR
         H --> I["read_file<br/>list_files"]
         I --> J["read_file<br/>list_files<br/>(modular)"]
         J --> K["bash, edit_file,<br/>grep (ripgrep)"]
+        K --> L["+ streaming<br/>+ tool visibility"]
     end
 
     A -.-> G
@@ -43,6 +46,7 @@ graph LR
     C -.-> I
     D -.-> J
     E -.-> K
+    F -.-> L
 ```
 
 ## How It Works (Architecture)
@@ -192,6 +196,24 @@ bun run chapter5/index.ts
 - Externalizing tool descriptions for better prompt management
 - Automatic dependency management (downloading Ripgrep binary)
 
+### Chapter 6: Streaming Responses
+
+Enhances the user experience with real-time streaming output and tool visibility.
+
+```bash
+bun run 6-streaming-response/index.ts
+```
+
+**Try it:**
+- "What files are in this project?" (watch text stream in real-time)
+- "Read package.json and summarize it" (see tool calls as they happen)
+
+**What you'll learn:**
+- Using the Anthropic streaming API (`client.messages.stream()`)
+- Handling streaming events (`text`, `streamEvent`, `contentBlock`)
+- Showing tool calls before execution with `content_block_start`
+- Building responsive CLI output with `process.stdout.write()`
+
 ## Chapter Overview
 
 | Chapter | Focus | Tools Available |
@@ -201,6 +223,7 @@ bun run chapter5/index.ts
 | 3 | Multiple tools, error handling | `read_file`, `list_files` |
 | 4 | Modular architecture, extensibility | `read_file`, `list_files` |
 | 5 | Advanced toolkit & infrastructure | `read_file`, `list_files`, `bash`, `edit_file`, `grep` |
+| 6 | Streaming responses, tool visibility | Same as Chapter 5 + streaming |
 
 ## File Structure
 
@@ -229,6 +252,12 @@ code-agent-ts/
 │       ├── edit_tool.ts   # File editing tool
 │       ├── grep.ts        # Advanced search tool
 │       └── tool_description/ # Externalized descriptions
+├── 6-streaming-response/
+│   ├── index.ts           # Entry point
+│   ├── agent.ts           # Agent with streaming support
+│   ├── types.ts           # Shared interfaces
+│   ├── ripgrep/           # Ripgrep downloader
+│   └── tools/             # Same tools as Chapter 5
 ├── logger.ts              # Pino structured logging
 ├── console.ts             # Terminal output utilities
 └── README.md
@@ -286,8 +315,8 @@ See [Chapter 4 README](./chapter4/README.md) for detailed instructions.
 ## What's Next?
 
 After completing the workshop, try extending with:
-- **Bash tool**: Run shell commands
-- **Edit tool**: Modify files
-- **Code search**: Pattern matching with ripgrep
 - **System prompts**: Give Claude context about the project
-- **Streaming**: Display responses as they arrive
+- **Extended thinking**: Show Claude's reasoning process
+- **Parallel tool execution**: Run multiple tools concurrently
+- **Tool cancellation**: Allow users to abort mid-stream
+- **Context management**: Handle long conversations efficiently
