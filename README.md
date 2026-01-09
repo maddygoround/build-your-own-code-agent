@@ -14,7 +14,7 @@ By the end of this workshop, you'll understand how to:
 
 ## What We're Building
 
-You'll build 6 versions of a coding assistant, each adding more capabilities:
+You'll build 7 versions of a coding assistant, each adding more capabilities:
 
 1. **Basic Chat** — talk to Claude
 2. **File Reader** — read code files
@@ -22,6 +22,7 @@ You'll build 6 versions of a coding assistant, each adding more capabilities:
 4. **Modular Framework** — clean, extensible architecture
 5. **Refined Toolkit** — powerful tools like bash, edit, and grep
 6. **Streaming Responses** — real-time text and tool visibility
+7. **Reasoning & Visual Cues** — see Claude's thought process with extended thinking
 
 ```mermaid
 graph LR
@@ -31,22 +32,25 @@ graph LR
         C --> D["Chapter 4<br/>Modular Framework"]
         D --> E["Chapter 5<br/>Refined Toolkit"]
         E --> F["Chapter 6<br/>Streaming"]
+        F --> G["Chapter 7<br/>Reasoning"]
     end
 
     subgraph "Tool Capabilities"
-        G["No Tools"] --> H["read_file"]
-        H --> I["read_file<br/>list_files"]
-        I --> J["read_file<br/>list_files<br/>(modular)"]
-        J --> K["bash, edit_file,<br/>grep (ripgrep)"]
-        K --> L["+ streaming<br/>+ tool visibility"]
+        H["No Tools"] --> I["read_file"]
+        I --> J["read_file<br/>list_files"]
+        J --> K["read_file<br/>list_files<br/>(modular)"]
+        K --> L["bash, edit_file,<br/>grep (ripgrep)"]
+        L --> M["+ streaming<br/>+ tool visibility"]
+        M --> N["+ extended thinking<br/>+ visual reasoning"]
     end
 
-    A -.-> G
-    B -.-> H
-    C -.-> I
-    D -.-> J
-    E -.-> K
-    F -.-> L
+    A -.-> H
+    B -.-> I
+    C -.-> J
+    D -.-> K
+    E -.-> L
+    F -.-> M
+    G -.-> N
 ```
 
 ## How It Works (Architecture)
@@ -214,6 +218,27 @@ bun run 6-streaming-response/index.ts
 - Showing tool calls before execution with `content_block_start`
 - Building responsive CLI output with `process.stdout.write()`
 
+### Chapter 7: Reasoning & Visual Cues
+
+Adds extended thinking and reasoning visualization to see Claude's thought process in real-time.
+
+```bash
+bun run 7-reasoning-response/index.ts
+```
+
+**Try it:**
+- "Find all TypeScript errors and fix them" (watch Claude's analytical reasoning)
+- "Create a new tool for counting code lines" (see planning and decision-making)
+- Use `--collapse-reasoning` to show summaries only
+- Use `--no-thinking` to disable reasoning visualization
+
+**What you'll learn:**
+- Extended thinking API with `thinking.type: "enabled"`
+- Handling `thinking_delta` streaming events
+- Visual indicators for 5 cognitive stages (🤔 analyzing, 📋 planning, 💡 deciding, ⚡ executing, ✓ evaluating)
+- Progressive disclosure and collapsible reasoning blocks
+- Stage detection from thinking content
+
 ## Chapter Overview
 
 | Chapter | Focus | Tools Available |
@@ -224,6 +249,7 @@ bun run 6-streaming-response/index.ts
 | 4 | Modular architecture, extensibility | `read_file`, `list_files` |
 | 5 | Advanced toolkit & infrastructure | `read_file`, `list_files`, `bash`, `edit_file`, `grep` |
 | 6 | Streaming responses, tool visibility | Same as Chapter 5 + streaming |
+| 7 | Extended thinking, reasoning visualization | Same as Chapter 6 + thinking blocks |
 
 ## File Structure
 
