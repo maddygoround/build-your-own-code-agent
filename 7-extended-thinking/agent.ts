@@ -1,65 +1,43 @@
 import Anthropic from "@anthropic-ai/sdk";
 import * as readline from "readline/promises";
-import { console_reasoning, detectReasoningStage } from "./console-reasoning";
+import { console_out } from "../console";
 import { logger } from "../logger";
-import { ToolDefinition, ReasoningStage, ReasoningState } from "./types";
+import { ToolDefinition } from "./types";
 
 export class Agent {
   private client: Anthropic;
   private rl: readline.Interface;
   private verbose: boolean;
   private tools: ToolDefinition[];
-  private enableThinking: boolean;
-  private collapseReasoning: boolean;
-  private reasoningState: ReasoningState;
+  private isThinking: boolean = false;
 
   constructor(
     client: Anthropic,
     rl: readline.Interface,
     tools: ToolDefinition[],
-    options?: {
-      verbose?: boolean;
-      enableThinking?: boolean;
-      collapseReasoning?: boolean;
-    }
+    verbose?: boolean
   ) {
     this.client = client;
     this.rl = rl;
     this.tools = tools;
-    this.verbose = !!options?.verbose;
-    this.enableThinking = options?.enableThinking ?? true;
-    this.collapseReasoning = options?.collapseReasoning ?? false;
-
-    this.reasoningState = {
-      isActive: false,
-      currentStage: null,
-      accumulatedText: "",
-      collapsed: this.collapseReasoning,
-    };
+    this.verbose = !!verbose;
   }
 
   async run() {
     const conversation: Anthropic.MessageParam[] = [];
 
     if (this.verbose) {
-      logger.debug(
-        "Conversation started with reasoning enabled:",
-        this.enableThinking
-      );
+      logger.debug("Conversation started with extended thinking");
     }
 
-    const bannerText = this.enableThinking
-      ? "Chat with Claude (with Extended Thinking) - use 'ctrl-c' to quit"
-      : "Chat with Claude - use 'ctrl-c' to quit";
-
-    console_reasoning.banner(bannerText);
+    console_out.banner(
+      "Chat with Claude (Extended Thinking) - use 'ctrl-c' to quit"
+    );
 
     while (true) {
       let userInput: string;
       try {
-        userInput = await this.rl.question(
-          console_reasoning.userPromptString()
-        );
+        userInput = await this.rl.question(console_out.userPromptString());
       } catch {
         if (this.verbose) {
           logger.debug("User input ended, breaking from chat loop");
@@ -123,7 +101,7 @@ export class Agent {
                   }
                   try {
                     toolResult = await tool.Execute(block.input);
-                    console_reasoning.toolEnd(toolToUse, true);
+                    console_out.toolEnd(toolToUse, true);
                   } catch (err) {
                     toolErrorMsg =
                       err instanceof Error ? err.message : String(err);
@@ -131,7 +109,7 @@ export class Agent {
                       { toolToUse, toolErrorMsg },
                       "Tool execution failed"
                     );
-                    console_reasoning.toolEnd(toolToUse, false);
+                    console_out.toolEnd(toolToUse, false);
                   }
 
                   if (this.verbose && !toolErrorMsg) {
@@ -148,7 +126,7 @@ export class Agent {
               if (!toolFound) {
                 toolErrorMsg = `Tool not found: ${toolToUse}`;
                 logger.error({ toolToUse }, "Tool not found");
-                console_reasoning.toolEnd(toolToUse, false);
+                console_out.toolEnd(toolToUse, false);
               }
 
               toolsResults.push({
@@ -161,12 +139,7 @@ export class Agent {
           }
 
           if (!hasToolUse) {
-            // End any active reasoning
-            if (this.reasoningState.isActive) {
-              console_reasoning.reasoningEnd();
-              this.resetReasoningState();
-            }
-            console_reasoning.finishClaudeTurn();
+            console_out.finishClaudeTurn();
             break;
           }
 
@@ -191,9 +164,7 @@ export class Agent {
         if (this.verbose) {
           logger.debug({ err }, "Error during inference");
         }
-        console_reasoning.error(
-          err instanceof Error ? err.message : String(err)
-        );
+        console_out.error(err instanceof Error ? err.message : String(err));
         return;
       }
     }
@@ -206,93 +177,29 @@ export class Agent {
   private handleStreamEvent(event: Anthropic.MessageStreamEvent) {
     switch (event.type) {
       case "content_block_start":
-        switch (event.content_block.type) {
-          case "thinking":
-            // Start reasoning block
-            if (this.enableThinking && !this.reasoningState.isActive) {
-              this.reasoningState.isActive = true;
-              this.reasoningState.accumulatedText = "";
-              this.reasoningState.currentStage = ReasoningStage.ANALYZING;
-
-              if (!this.collapseReasoning) {
-                console_reasoning.reasoningStart(
-                  this.reasoningState.currentStage,
-                  false
-                );
-              }
-            }
-            break;
-          case "tool_use":
-            // Show tool being called
-            console_reasoning.toolStart(event.content_block.name);
-            break;
+        if (event.content_block.type === "thinking") {
+          this.isThinking = true;
+          console_out.thinkingStart();
+        } else if (event.content_block.type === "tool_use") {
+          console_out.toolStart(event.content_block.name);
         }
         break;
 
       case "content_block_delta":
-        switch (event.delta.type) {
-          case "thinking_delta":
-            // Stream thinking content
-            if (this.enableThinking && this.reasoningState.isActive) {
-              const text = event.delta.thinking;
-              this.reasoningState.accumulatedText += text;
-
-              // Detect stage changes
-              const newStage = detectReasoningStage(
-                this.reasoningState.accumulatedText
-              );
-              if (newStage !== this.reasoningState.currentStage) {
-                // Stage changed
-                if (!this.collapseReasoning) {
-                  console_reasoning.reasoningEnd();
-                  console_reasoning.reasoningStart(newStage, false);
-                }
-                this.reasoningState.currentStage = newStage;
-              }
-
-              // Stream the text
-              if (!this.collapseReasoning && this.reasoningState.currentStage) {
-                console_reasoning.thinkingStream(
-                  text,
-                  this.reasoningState.currentStage
-                );
-              }
-            }
-            break;
-          case "text_delta":
-            // Stream regular text
-            console_reasoning.claudeStream(event.delta.text);
-            break;
+        if (event.delta.type === "thinking_delta") {
+          console_out.thinkingStream(event.delta.thinking);
+        } else if (event.delta.type === "text_delta") {
+          console_out.claudeStream(event.delta.text);
         }
         break;
 
       case "content_block_stop":
-        // End reasoning block if active
-        if (
-          this.reasoningState.isActive &&
-          event.content_block?.type === "thinking"
-        ) {
-          if (this.collapseReasoning) {
-            // Show collapsed summary
-            const summary =
-              this.reasoningState.accumulatedText.slice(0, 60) + "...";
-            console_reasoning.reasoningCollapsed(summary);
-          } else {
-            console_reasoning.reasoningEnd();
-          }
-          this.resetReasoningState();
+        if (this.isThinking) {
+          console_out.thinkingEnd();
+          this.isThinking = false;
         }
         break;
     }
-  }
-
-  private resetReasoningState() {
-    this.reasoningState = {
-      isActive: false,
-      currentStage: null,
-      accumulatedText: "",
-      collapsed: this.collapseReasoning,
-    };
   }
 
   private async runInference(conversation: Anthropic.MessageParam[]) {
@@ -301,29 +208,20 @@ export class Agent {
     );
 
     if (this.verbose) {
-      logger.debug(
-        "Making API call to Claude with extended thinking:",
-        this.enableThinking
-      );
+      logger.debug("Making API call to Claude with extended thinking");
     }
 
     try {
-      const params: any = {
-        model: "claude-3-7-sonnet-latest",
-        max_tokens: 2048,
+      const stream = this.client.messages.stream({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 16000,
+        thinking: {
+          type: "enabled",
+          budget_tokens: 10000,
+        },
         messages: conversation,
         tools: anthropicTools,
-      };
-
-      // Add extended thinking if enabled
-      if (this.enableThinking) {
-        params.thinking = {
-          type: "enabled",
-          budget_tokens: 1024,
-        };
-      }
-
-      const stream = this.client.messages.stream(params);
+      });
 
       if (this.verbose) {
         logger.debug("API call successful, response received");

@@ -22,7 +22,7 @@ You'll build 7 versions of a coding assistant, each adding more capabilities:
 4. **Modular Framework** — clean, extensible architecture
 5. **Refined Toolkit** — powerful tools like bash, edit, and grep
 6. **Streaming Responses** — real-time text and tool visibility
-7. **Reasoning & Visual Cues** — see Claude's thought process with extended thinking
+7. **Extended Thinking** — see Claude's reasoning process in real-time
 
 ```mermaid
 graph LR
@@ -32,7 +32,7 @@ graph LR
         C --> D["Chapter 4<br/>Modular Framework"]
         D --> E["Chapter 5<br/>Refined Toolkit"]
         E --> F["Chapter 6<br/>Streaming"]
-        F --> G["Chapter 7<br/>Reasoning"]
+        F --> G["Chapter 7<br/>Extended Thinking"]
     end
 
     subgraph "Tool Capabilities"
@@ -41,7 +41,7 @@ graph LR
         J --> K["read_file<br/>list_files<br/>(modular)"]
         K --> L["bash, edit_file,<br/>grep (ripgrep)"]
         L --> M["+ streaming<br/>+ tool visibility"]
-        M --> N["+ extended thinking<br/>+ visual reasoning"]
+        M --> N["+ thinking blocks<br/>+ reasoning visibility"]
     end
 
     A -.-> H
@@ -218,26 +218,25 @@ bun run 6-streaming-response/index.ts
 - Showing tool calls before execution with `content_block_start`
 - Building responsive CLI output with `process.stdout.write()`
 
-### Chapter 7: Reasoning & Visual Cues
+### Chapter 7: Extended Thinking
 
-Adds extended thinking and reasoning visualization to see Claude's thought process in real-time.
+Makes Claude's reasoning process visible with thinking blocks and real-time streaming.
 
 ```bash
-bun run 7-reasoning-response/index.ts
+bun run 7-thinking-tokens/index.ts
 ```
 
 **Try it:**
-- "Find all TypeScript errors and fix them" (watch Claude's analytical reasoning)
+- "Find all TypeScript files with potential bugs" (watch Claude reason through the problem)
 - "Create a new tool for counting code lines" (see planning and decision-making)
-- Use `--collapse-reasoning` to show summaries only
-- Use `--no-thinking` to disable reasoning visualization
+- Use `--verbose` for debug logging
 
 **What you'll learn:**
-- Extended thinking API with `thinking.type: "enabled"`
-- Handling `thinking_delta` streaming events
-- Visual indicators for 5 cognitive stages (🤔 analyzing, 📋 planning, 💡 deciding, ⚡ executing, ✓ evaluating)
-- Progressive disclosure and collapsible reasoning blocks
-- Stage detection from thinking content
+- Extended thinking API with `thinking: { type: "enabled", budget_tokens: 10000 }`
+- Handling thinking stream events (`thinking_delta`)
+- Visual indicators for thinking blocks (💭 with dimmed cyan text)
+- Simple state management with boolean flags
+- Reusing existing console utilities for new features
 
 ## Chapter Overview
 
@@ -249,7 +248,7 @@ bun run 7-reasoning-response/index.ts
 | 4 | Modular architecture, extensibility | `read_file`, `list_files` |
 | 5 | Advanced toolkit & infrastructure | `read_file`, `list_files`, `bash`, `edit_file`, `grep` |
 | 6 | Streaming responses, tool visibility | Same as Chapter 5 + streaming |
-| 7 | Extended thinking, reasoning visualization | Same as Chapter 6 + thinking blocks |
+| 7 | Extended thinking, reasoning visibility | Same as Chapter 6 + thinking blocks |
 
 ## File Structure
 
@@ -284,6 +283,11 @@ code-agent-ts/
 │   ├── types.ts           # Shared interfaces
 │   ├── ripgrep/           # Ripgrep downloader
 │   └── tools/             # Same tools as Chapter 5
+├── 7-thinking-tokens/
+│   ├── index.ts           # Entry point
+│   ├── agent.ts           # Agent with thinking support
+│   ├── types.ts           # Shared interfaces
+│   └── tools/             # Same tools as Chapter 6
 ├── logger.ts              # Pino structured logging
 ├── console.ts             # Terminal output utilities
 └── README.md

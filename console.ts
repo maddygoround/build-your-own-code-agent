@@ -8,6 +8,7 @@ import boxen from "boxen";
 import logSymbols from "log-symbols";
 
 let claudeTurnStarted = false;
+let thinkingBlockActive = false;
 
 export const console_out = {
     /**
@@ -84,6 +85,32 @@ export const console_out = {
         if (claudeTurnStarted) {
             console.log();
             claudeTurnStarted = false;
+        }
+        thinkingBlockActive = false;
+    },
+
+    /**
+     * Start a thinking block
+     */
+    thinkingStart(): void {
+        thinkingBlockActive = true;
+        console.log(`\n${pc.dim("💭")} ${pc.cyan(pc.bold("Thinking..."))}`);
+    },
+
+    /**
+     * Stream thinking content with dimmed styling
+     */
+    thinkingStream(delta: string): void {
+        process.stdout.write(pc.dim(pc.cyan(delta)));
+    },
+
+    /**
+     * End thinking block
+     */
+    thinkingEnd(): void {
+        if (thinkingBlockActive) {
+            console.log();
+            thinkingBlockActive = false;
         }
     },
 

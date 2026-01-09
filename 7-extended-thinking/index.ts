@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Command } from "commander";
 import * as readline from "readline/promises";
-import { console_reasoning } from "./console-reasoning";
+import { console_out } from "../console";
 import { logger } from "../logger";
 import { Agent } from "./agent";
 import { BashToolDefinition } from "./tools/bash_tool";
@@ -14,21 +14,14 @@ async function main() {
     const program = new Command();
     program
         .option("-v, --verbose", "Enable verbose logging")
-        .option("--no-thinking", "Disable extended thinking/reasoning visualization")
-        .option("--collapse-reasoning", "Collapse reasoning blocks by default")
         .parse(process.argv);
 
     const options = program.opts();
     const verbose = !!options.verbose;
-    const enableThinking = options.thinking !== false;
-    const collapseReasoning = !!options.collapseReasoning;
 
     if (verbose) {
         logger.level = "debug";
-        logger.debug({
-            enableThinking,
-            collapseReasoning
-        }, "Starting Chapter 7 agent");
+        logger.debug("Starting Chapter 7 agent with extended thinking");
     }
 
     const client = new Anthropic();
@@ -46,22 +39,18 @@ async function main() {
         GrepToolDefinition
     ];
 
-    const agent = new Agent(client, rl, tools, {
-        verbose,
-        enableThinking,
-        collapseReasoning,
-    });
+    const agent = new Agent(client, rl, tools, verbose);
 
     try {
         await agent.run();
     } catch (err) {
-        console_reasoning.error(err instanceof Error ? err.message : String(err));
+        console_out.error(err instanceof Error ? err.message : String(err));
     } finally {
         rl.close();
     }
 }
 
 main().catch((err) => {
-    console_reasoning.error(err instanceof Error ? err.message : String(err));
+    console_out.error(err instanceof Error ? err.message : String(err));
     process.exit(1);
 });
